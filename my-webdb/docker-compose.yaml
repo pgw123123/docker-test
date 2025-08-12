@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  mydb:
+    image: mysql:8.0-debian
+    container_name: mysql_app
+    volumes:
+      - mydb_data:/var/lib/mysql
+    restart: always
+    ports:
+      - "3306:3306"               # 외부 클라이언트(Workbench 등) 테스트용
+    networks:
+      - backend-net
+    environment:
+      MYSQL_ROOT_PASSWORD: "password#"
+      MYSQL_DATABASE: wpdb
+      MYSQL_USER: wpuser
+      MYSQL_PASSWORD: wppassword
+
+  myweb:
+    depends_on:
+      - mydb
+    image: wordpress:5.7
+    container_name: wordpress_app
+    ports:
+      - "8888:80"
+    networks:
+      - backend-net
+      - frontend-net              # (옵션) 외부 연결용 별도 네트워크가 필요하면 추가
+    volumes:
+      - myweb_data:/var/www/html  # 워드프레스 컨텐츠 영구화
+      - ${PWD}/myweb-log:/var/log # 호스트 쪽에서 로그 확인
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: mydb:3306
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppassword
+      WORDPRESS_DB_NAME: wpdb
+
+networks:
+  frontend-net: {}
+  backend-net: {}
+
+volumes:
+  mydb_data: {}
+  myweb_data: {}
